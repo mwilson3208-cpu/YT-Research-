@@ -1,13 +1,17 @@
 {
-  "name": "tube-atlas",
+  "name": "viewforge",
   "version": "1.0.0",
-  "description": "Tube Atlas - YouTube research tool for faceless channel creators. Find winning topics, titles, keywords and trends before you record your next voiceover.",
+  "description": "Viewforge - YouTube research tool for faceless channel creators. Find winning topics, titles, keywords and trends before you record your next voiceover.",
   "type": "module",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "build:web": "node scripts/build-web.mjs",
+    "serve:web": "node scripts/serve-web.mjs",
+    "build:single": "node scripts/build-single.mjs",
+    "build": "npm run build:web && npm run build:single"
   },
   "engines": {
     "node": ">=20"

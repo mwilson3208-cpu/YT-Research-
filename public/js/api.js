@@ -16,7 +16,7 @@ export async function call(endpoint, body = {}) {
         body: JSON.stringify(body),
       });
     } catch (error) {
-      throw new Error(`Cannot reach the Tube Atlas server. Is it still running? (${error.message})`);
+      throw new Error(`Cannot reach the Viewforge server. Is it still running? (${error.message})`);
     }
     let payload;
     try {

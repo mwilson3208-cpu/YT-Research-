@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Viewforge - YouTube Research Console</title>
+<title>Viewforge Research Console</title>
 <meta name="description" content="Viewforge reveals the top videos, channels, keywords and trends on YouTube, so you create audio content people are already searching for.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ff4d3d'/%3E%3Cpath d='M38 28l34 22-34 22z' fill='white'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
 <div class="app">
@@ -23,7 +23,8 @@
     </div>
     <div class="topbar-spacer"></div>
     <span class="badge" id="quota">-</span>
-    <span class="badge" id="mode-badge">Connecting...</span>
+    <span class="badge" id="mode-badge">Starting...</span>
+    <button class="btn ghost sm" id="settings-btn" title="Add your YouTube API key">Settings</button>
     <button class="btn ghost sm" id="cache-btn" title="Clear the 10 minute result cache">Clear cache</button>
     <button class="btn ghost sm" id="theme-btn" title="Switch light / dark">Theme</button>
   </header>
@@ -45,6 +46,6 @@
   <div style="padding:24px">Viewforge needs JavaScript enabled to run its research tools.</div>
 </noscript>
 
-<script type="module" src="/js/app.js"></script>
+<script type="module" src="./js/app.js"></script>
 </body>
 </html>

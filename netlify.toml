@@ -1,0 +1,17 @@
+# Drag the web/ folder onto app.netlify.com/drop, or connect this repo and
+# Netlify will use the settings below.
+[build]
+  command = "npm run build:web"
+  publish = "web"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Hash routing only: every path serves the same shell.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

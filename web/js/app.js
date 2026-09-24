@@ -1,5 +1,5 @@
 import { el, clear, notice, empty, toast, num, int } from './util.js';
-import { call, getStatus, clearCache } from './api.js';
+import { call, getStatus, clearCache, loadSavedSettings, saveApiKey, savePrefs, currentSettings, hasKey } from './api.js';
 import { TOOLS, TOOL_GROUPS } from './tools.js';
 
 const state = {
@@ -31,10 +31,18 @@ function init() {
     }
   });
 
+  document.getElementById('settings-btn').addEventListener('click', openSettings);
+  dom.modeBadge.addEventListener('click', openSettings);
+  dom.modeBadge.style.cursor = 'pointer';
+
   applyStoredTheme();
+  loadSavedSettings();
   buildNav();
   window.addEventListener('hashchange', route);
-  loadStatus().finally(route);
+  loadStatus().finally(() => {
+    route();
+    if (!hasKey()) maybeShowWelcome();
+  });
 }
 
 function applyStoredTheme() {
@@ -56,7 +64,7 @@ async function loadStatus() {
     state.status = payload.data;
     renderStatus();
   } catch (error) {
-    dom.modeBadge.textContent = 'Server offline';
+    dom.modeBadge.textContent = 'Startup failed';
     dom.modeBadge.className = 'badge bad';
     console.error(error);
   }
@@ -72,8 +80,8 @@ function renderStatus() {
     live ? 'Live YouTube data' : 'Demo data',
   );
   dom.modeBadge.title = live
-    ? 'Connected to the YouTube Data API v3'
-    : 'No API key set. Add YOUTUBE_API_KEY to .env for live data.';
+    ? 'Connected to the YouTube Data API v3. Click to change your key.'
+    : 'Running on sample data. Click to add your YouTube API key.';
 
   const quota = status.quota;
   if (live) {
@@ -273,8 +281,8 @@ function loadingMessage(tool) {
 
 function errorNotice(error) {
   const hints = {
-    demo_mode: 'Add YOUTUBE_API_KEY to your .env file and restart the server.',
-    quotaExceeded: 'The YouTube quota resets at midnight Pacific. Until then, remove your key from .env to use demo mode.',
+    demo_mode: 'Open Settings in the header and paste your YouTube API key.',
+    quotaExceeded: 'The YouTube quota resets at midnight Pacific. Until then, clear your key in Settings to keep using sample data.',
     keyInvalid: 'That API key was rejected. Check it in the Google Cloud console and confirm YouTube Data API v3 is enabled.',
     accessNotConfigured: 'Enable "YouTube Data API v3" for this project in the Google Cloud console.',
     commentsDisabled: 'Pick a video that allows comments.',
@@ -326,9 +334,9 @@ function renderAbout() {
     ]) : null,
     section('Where the data comes from', [
       ['YouTube Data API v3', 'Search, videos, channels, playlists, comment threads and the most-popular chart. Needs your own free API key.'],
-      ['YouTube autocomplete', 'The Keyword Generator reads the same suggestion endpoint the YouTube search box uses, so the phrases are real searches.'],
+      ['YouTube autocomplete', 'The Keyword Generator reads the same suggestion endpoint the YouTube search box uses. Browsers block that endpoint, so this hosted build falls back to a pattern bank and says so on screen.'],
       ['Watch page caption track', 'Video to Text reads the caption track the player itself loads. The Data API will not release caption bodies without the video owner’s permission.'],
-      ['Demo library', 'With no API key set, an 8-channel, 72-video sample library runs through the identical code path so you can try every tool offline.'],
+      ['Sample library', 'With no API key set, an 8-channel, 72-video sample library runs through the identical code path so you can try every tool before signing up for anything.'],
     ]),
     section('The two estimates, stated plainly', [
       ['Estimated earnings', `Monetized views are assumed at 55% of total views, multiplied by an RPM band of $${status?.rpm.low ?? '0.50'} to $${status?.rpm.high ?? '6.00'} per 1,000 views, then adjusted by category. YouTube never publishes another channel’s revenue, so treat this as a range, not a figure.`],
@@ -344,9 +352,103 @@ function renderAbout() {
     section('Quota, and how to keep it', [
       ['You get 10,000 units a day', 'A search costs 100 units. Video, channel, playlist and comment lookups cost 1 each. So roughly 90 keyword searches a day on the free tier.'],
       ['Results are cached for 10 minutes', 'Re-running the same search inside that window costs nothing. The header shows units used this session.'],
-      ['Demo mode costs nothing', 'Remove YOUTUBE_API_KEY from .env to explore every tool with the sample library.'],
+      ['Sample mode costs nothing', 'Clear your key in Settings to explore every tool against the bundled sample library.'],
     ]),
   );
+}
+
+
+/* ---------- Settings ---------- */
+
+function openSettings() {
+  const current = currentSettings();
+  const keyInput = el('input', { type: 'text', placeholder: 'AIza...', spellcheck: 'false' });
+  keyInput.value = current.apiKey || '';
+
+  const regionInput = el('input', { type: 'text', maxlength: '2' });
+  regionInput.value = current.region || 'US';
+  const languageInput = el('input', { type: 'text', maxlength: '5' });
+  languageInput.value = current.language || 'en';
+  const rpmLowInput = el('input', { type: 'number', step: '0.05', min: '0' });
+  rpmLowInput.value = String(current.rpmLow);
+  const rpmHighInput = el('input', { type: 'number', step: '0.05', min: '0' });
+  rpmHighInput.value = String(current.rpmHigh);
+
+  const status = el('div', { class: 'field-hint' });
+
+  const close = () => overlay.remove();
+
+  const save = () => {
+    const stored = saveApiKey(keyInput.value);
+    savePrefs({
+      region: (regionInput.value || 'US').toUpperCase().slice(0, 2),
+      language: (languageInput.value || 'en').trim(),
+      rpmLow: Number(rpmLowInput.value) || 0.5,
+      rpmHigh: Number(rpmHighInput.value) || 6,
+    });
+    if (!stored && keyInput.value.trim()) {
+      status.textContent = 'Saved for this session. Your browser blocked local storage, so you will need to paste it again after a reload.';
+      toast('Key active for this session');
+    } else {
+      toast(keyInput.value.trim() ? 'API key saved in this browser' : 'Key cleared - back to sample data');
+      close();
+    }
+    state.results.clear();
+    loadStatus().then(route);
+  };
+
+  const dialog = el('div', { class: 'modal', onclick: (event) => event.stopPropagation() }, [
+    el('div', { class: 'modal-head' }, [
+      el('div', { class: 'panel-title', text: 'Settings' }),
+      el('button', { class: 'btn ghost sm', onclick: close }, 'Close'),
+    ]),
+    notice('info', 'Your key stays in this browser',
+      'It is saved in this browser only and sent straight to Google when you run a search. It never reaches any other server, and nobody else who opens this page can see it.'),
+    el('div', { class: 'field' }, [
+      el('label', { text: 'YouTube Data API v3 key' }),
+      keyInput,
+      el('span', { class: 'field-hint', text: 'Leave this empty to keep working with the bundled sample library.' }),
+    ]),
+    el('details', { class: 'howto' }, [
+      el('summary', { text: 'How to get a free key (about 3 minutes)' }),
+      el('ol', { class: 'howto-list' }, [
+        el('li', {}, [ 'Open the ', el('a', { href: 'https://console.cloud.google.com/projectcreate', target: '_blank', rel: 'noopener' }, 'Google Cloud console'), ' and create a project.' ]),
+        el('li', {}, [ 'Open ', el('a', { href: 'https://console.cloud.google.com/apis/library/youtube.googleapis.com', target: '_blank', rel: 'noopener' }, 'YouTube Data API v3'), ' and press Enable.' ]),
+        el('li', {}, [ 'Go to ', el('a', { href: 'https://console.cloud.google.com/apis/credentials', target: '_blank', rel: 'noopener' }, 'Credentials'), ', choose Create credentials, then API key.' ]),
+        el('li', { text: 'Copy the key and paste it above. Google gives you 10,000 free units a day.' }),
+        el('li', { text: 'Optional: restrict the key to this page under Website restrictions, so nobody else can spend your quota.' }),
+      ]),
+    ]),
+    el('div', { class: 'form-grid' }, [
+      el('div', { class: 'field' }, [el('label', { text: 'Default region' }), regionInput]),
+      el('div', { class: 'field' }, [el('label', { text: 'Language' }), languageInput]),
+      el('div', { class: 'field' }, [el('label', { text: 'RPM low (USD)' }), rpmLowInput]),
+      el('div', { class: 'field' }, [el('label', { text: 'RPM high (USD)' }), rpmHighInput]),
+    ]),
+    el('div', { class: 'field-hint', text: 'RPM sets the earnings estimate band, in dollars per 1,000 monetized views.' }),
+    status,
+    el('div', { class: 'modal-actions' }, [
+      el('button', { class: 'btn ghost', onclick: () => { keyInput.value = ''; save(); } }, 'Clear key'),
+      el('button', { class: 'btn', onclick: save }, 'Save'),
+    ]),
+  ]);
+
+  const overlay = el('div', { class: 'overlay', onclick: close }, [dialog]);
+  document.body.append(overlay);
+  keyInput.focus();
+  document.addEventListener('keydown', function escape(event) {
+    if (event.key === 'Escape') { close(); document.removeEventListener('keydown', escape); }
+  });
+}
+
+function maybeShowWelcome() {
+  try {
+    if (localStorage.getItem('vf:welcomed')) return;
+    localStorage.setItem('vf:welcomed', '1');
+  } catch { /* storage blocked: show it, it is harmless */ }
+  const main = dom.main;
+  main.prepend(notice('info', 'You are running on sample data',
+    'Every tool works right now against a bundled library of 8 channels and 72 videos. To research the real YouTube, add a free API key under Settings in the header.'));
 }
 
 document.addEventListener('DOMContentLoaded', init);

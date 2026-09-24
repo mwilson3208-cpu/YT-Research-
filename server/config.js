@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { settings, configure, isLive } from './settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, '..');
@@ -31,14 +32,14 @@ const num = (value, fallback) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-export const config = {
+configure({
   apiKey: (process.env.YOUTUBE_API_KEY || '').trim(),
-  port: Number.parseInt(process.env.PORT || '4173', 10),
   region: (process.env.DEFAULT_REGION || 'US').toUpperCase(),
   language: process.env.DEFAULT_LANGUAGE || 'en',
   rpmLow: num(process.env.RPM_LOW, 0.5),
   rpmHigh: num(process.env.RPM_HIGH, 6),
   cacheTtlMs: num(process.env.CACHE_TTL_MS, 10 * 60 * 1000),
-};
+});
 
-export const isLive = () => config.apiKey.length > 0;
+export const port = Number.parseInt(process.env.PORT || '4173', 10);
+export { settings as config, isLive };

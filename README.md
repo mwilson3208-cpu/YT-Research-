@@ -1,8 +1,8 @@
-# Tube Atlas
+# Viewforge
 
 **Before you produce your next voiceover, know exactly what wins.**
 
-Tube Atlas is a YouTube research console that reveals the top videos, channels, keywords and trends on the platform, so you create audio content people are already searching for. It runs on your own machine, uses your own free YouTube API key, and sends nothing anywhere else.
+Viewforge is a YouTube research console that reveals the top videos, channels, keywords and trends on the platform, so you create audio content people are already searching for. It runs in your browser or on your own machine, uses your own free YouTube API key, and sends nothing to anyone but Google.
 
 Built for creators running faceless channels: narration, documentary, sleep stories, explainers, podcast clips and Shorts.
 
@@ -38,11 +38,27 @@ Built for creators running faceless channels: narration, documentary, sleep stor
 
 **5,244 title combinations** — 131 headline structures across 14 angles, each scored on length, power words and keyword placement. Plus a hashtag builder that respects YouTube's 3-visible and 15-maximum rules.
 
-**Runs anywhere Node runs** — Windows, macOS and Linux, with zero npm dependencies.
+**Runs in any browser** — open one HTML file, or host it at your own URL. There is also a Node version for the two tools browsers restrict. Zero npm dependencies either way.
 
 ---
 
-## Quick start
+## Run it in your browser
+
+Three ways, depending on how much setup you want. All three run the same app.
+
+### 1. One file, no install
+
+Download **[dist/viewforge.html](dist/viewforge.html)** and double-click it. It opens in Chrome, Safari, Edge or Firefox and runs completely offline — the whole app is inside that one file. Keep it in your Downloads folder and open it whenever you need it.
+
+### 2. Host it at your own URL
+
+The `web/` folder is a plain static site. Any of these work:
+
+- **GitHub Pages**: in this repo go to Settings, then Pages, and set Source to GitHub Actions. The included workflow builds and publishes on every push, giving you `https://<your-username>.github.io/YT-Research-/`.
+- **Netlify**: drag the `web/` folder onto [app.netlify.com/drop](https://app.netlify.com/drop). You get a URL in about ten seconds.
+- **Vercel / Cloudflare Pages**: connect the repo. `vercel.json` and `netlify.toml` are already configured.
+
+### 3. Run the Node version locally
 
 ```bash
 git clone https://github.com/mwilson3208-cpu/YT-Research-.git
@@ -50,30 +66,34 @@ cd YT-Research-
 node server/index.js
 ```
 
-Open **http://localhost:4173**.
+Then open **http://localhost:4173**. No `npm install` and no build step — the server uses only the Node standard library, and needs Node 20 or newer.
 
-That is the whole install. There is no build step and nothing to `npm install` — the server uses only the Node standard library. You need Node 20 or newer.
+This is the most capable version. Two tools work here that browsers will not allow from a hosted page:
 
-### Demo mode
+| | Browser build | Node build |
+| --- | --- | --- |
+| 13 of the 15 tools | Yes | Yes |
+| Keyword Generator | Pattern bank | Live YouTube autocomplete |
+| Video to Text | Paste your own transcript | Fetches transcripts automatically |
 
-With no API key set, Tube Atlas runs against a bundled sample library of 8 channels and 72 videos. Every tool works, every column populates, every export runs. It is the fastest way to see what the tool does before you set up Google Cloud.
+Browsers block both endpoints for security reasons, which the app says on screen rather than failing quietly.
 
-### Live mode
+---
+
+## Adding your YouTube API key
+
+Without a key, the app runs on a bundled sample library of 8 channels and 72 videos. Every tool works and every column populates. It is the fastest way to see what the tool does before setting anything up.
 
 To research the real YouTube:
 
-1. Go to the [Google Cloud console](https://console.cloud.google.com/) and create a project.
-2. Enable **YouTube Data API v3** for that project.
-3. Create an API key under **Credentials**.
-4. Set it up:
+1. Open the [Google Cloud console](https://console.cloud.google.com/projectcreate) and create a project.
+2. Enable [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com).
+3. Under [Credentials](https://console.cloud.google.com/apis/credentials), choose Create credentials, then API key.
+4. Add it to the app:
+   - **Browser build**: press Settings in the header and paste it in. It is stored in that browser only and sent straight to Google. Restrict the key to your own page under Website restrictions so nobody else can spend your quota.
+   - **Node build**: `cp .env.example .env`, then paste the key into `YOUTUBE_API_KEY`.
 
-```bash
-cp .env.example .env
-# open .env and paste your key into YOUTUBE_API_KEY
-node server/index.js
-```
-
-The header badge switches from "Demo data" to "Live YouTube data" and starts tracking your quota.
+The header badge switches from "Demo data" to "Live YouTube data" and starts tracking quota.
 
 ---
 
@@ -159,14 +179,17 @@ server/
     comments.js     Sentiment, questions, requests
   data/demo.js      Deterministic sample library
 public/
-  index.html        App shell
+  index.html        App shell (Node build)
   css/app.css       Styling, light and dark
   js/app.js         Routing, forms, state
   js/tools.js       Tool definitions and result rendering
   js/table.js       Sortable grid, column presets, CSV export
   js/util.js        Formatting and DOM helpers
   js/api.js         Fetch wrapper
-test/               80 tests, run with `npm test`
+web/                Static browser bundle (built - do not edit core/ by hand)
+dist/viewforge.html Whole app as one double-clickable file (built)
+scripts/            Build and preview scripts
+test/               89 tests, run with `npm test`
 ```
 
 ---
@@ -174,9 +197,17 @@ test/               80 tests, run with `npm test`
 ## Development
 
 ```bash
-npm test          # 80 tests, no network required
-npm run dev       # server with --watch for auto-restart
+npm test            # 89 tests, no network required
+npm run dev         # Node server with --watch for auto-restart
+npm run build       # rebuild both browser bundles
+npm run serve:web   # preview the static bundle on :4174
 ```
+
+The research engine is shared. `server/` holds plain ES modules with no Node
+built-ins, and `scripts/build-web.mjs` copies them into `web/core/` so the
+browser runs the identical code. `scripts/build-single.mjs` then inlines
+everything into `dist/viewforge.html`. Tests fail if a bundle goes stale, so
+run `npm run build` after touching anything shared.
 
 The test suite runs entirely in demo mode, so it needs no API key and no internet connection.
 
@@ -187,6 +218,8 @@ The test suite runs entirely in demo mode, so it needs no API key and no interne
 - **Tags are often hidden.** Many channels leave the tag field empty, and YouTube only returns tags to the video's owner in some cases. When the Tag Analyzer finds nothing, use the repeated title phrases it shows instead.
 - **Comments can be disabled**, which the Comment Analyzer reports rather than failing silently.
 - **Transcripts need captions.** Videos with captions turned off cannot be transcribed by any tool, including this one.
+- **The browser build cannot read transcripts.** Browsers refuse to fetch the YouTube watch page from another site. Open the video on YouTube, press the three dots and Show transcript, copy it, and paste it into the Content Spinner. Or use the Node build, which does it for you.
+- **Your API key is yours to protect.** In the browser build it lives in that browser's local storage and goes only to Google. Restrict it by website in the Google Cloud console before you put it on a public URL.
 - **Estimates are estimates.** Earnings and ad eligibility are modelled, and labelled as such everywhere they appear.
 
 ## Licence

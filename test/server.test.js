@@ -26,7 +26,7 @@ test('the app shell is served at the root', async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type'), /text\/html/);
   const html = await response.text();
-  assert.match(html, /Tube Atlas/);
+  assert.match(html, /Viewforge/);
   assert.match(html, /js\/app\.js/);
 });
 
@@ -48,7 +48,7 @@ test('static assets are served with the right content types', async () => {
 test('unknown paths fall back to the shell for hash routing', async () => {
   const response = await fetch(`${BASE}/some/deep/route`);
   assert.equal(response.status, 200);
-  assert.match(await response.text(), /Tube Atlas/);
+  assert.match(await response.text(), /Viewforge/);
 });
 
 test('path traversal out of /public is refused', async () => {

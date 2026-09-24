@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { config, ROOT, isLive } from './config.js';
+import { config, ROOT, isLive, port } from './config.js';
 import { cacheClear, cacheStats } from './cache.js';
 import * as service from './service.js';
 import { YouTubeError } from './youtube.js';
@@ -155,7 +155,7 @@ const server = http.createServer(async (request, response) => {
           payload.error = 'This tool needs live YouTube data. Add YOUTUBE_API_KEY to .env and restart.';
         }
       }
-      if (status >= 500) console.error(`[tube-atlas] ${pathname}:`, error);
+      if (status >= 500) console.error(`[viewforge] ${pathname}:`, error);
       return sendJson(response, status, payload);
     }
   }
@@ -166,12 +166,12 @@ const server = http.createServer(async (request, response) => {
   return serveStatic(request, response, pathname);
 });
 
-server.listen(config.port, () => {
+server.listen(port, () => {
   const line = '='.repeat(62);
   console.log(`\n${line}`);
-  console.log('  TUBE ATLAS  -  YouTube research for faceless creators');
+  console.log('  VIEWFORGE  -  YouTube research for faceless creators');
   console.log(line);
-  console.log(`  URL          http://localhost:${config.port}`);
+  console.log(`  URL          http://localhost:${port}`);
   console.log(`  Mode         ${isLive() ? 'LIVE (YouTube Data API v3)' : 'DEMO (bundled sample library)'}`);
   if (!isLive()) {
     console.log('  Add a key    cp .env.example .env  then set YOUTUBE_API_KEY');
@@ -181,7 +181,7 @@ server.listen(config.port, () => {
 });
 
 process.on('SIGINT', () => {
-  console.log('\n[tube-atlas] shutting down');
+  console.log('\n[viewforge] shutting down');
   server.close(() => process.exit(0));
 });
 
