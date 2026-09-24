@@ -1,0 +1,26 @@
+{
+  "name": "tube-atlas",
+  "version": "1.0.0",
+  "description": "Tube Atlas - YouTube research tool for faceless channel creators. Find winning topics, titles, keywords and trends before you record your next voiceover.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "youtube",
+    "research",
+    "keyword-research",
+    "faceless-channel",
+    "voiceover",
+    "shorts",
+    "analytics"
+  ],
+  "license": "MIT",
+  "private": true
+}

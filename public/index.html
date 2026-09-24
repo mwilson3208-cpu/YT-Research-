@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tube Atlas - YouTube Research Console</title>
+<meta name="description" content="Tube Atlas reveals the top videos, channels, keywords and trends on YouTube, so you create audio content people are already searching for.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ff4d3d'/%3E%3Cpath d='M38 28l34 22-34 22z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="app">
+  <div class="brand">
+    <div class="brand-mark">TA</div>
+    <div class="brand-name">Tube <span>Atlas</span></div>
+  </div>
+
+  <header class="topbar">
+    <button class="btn ghost sm menu-btn" id="menu-btn" aria-label="Toggle menu">Menu</button>
+    <div>
+      <div class="topbar-title" id="top-title">Keyword Generator</div>
+      <div class="topbar-sub" id="top-sub">Loading...</div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <span class="badge" id="quota">-</span>
+    <span class="badge" id="mode-badge">Connecting...</span>
+    <button class="btn ghost sm" id="cache-btn" title="Clear the 10 minute result cache">Clear cache</button>
+    <button class="btn ghost sm" id="theme-btn" title="Switch light / dark">Theme</button>
+  </header>
+
+  <nav class="sidebar" id="sidebar">
+    <div id="nav"></div>
+    <div class="pairing" style="margin:14px 4px 0">
+      <b>Research, then record.</b>
+      Find the winning topic, title and trend here. Take the script straight into your voiceover tool and publish.
+    </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="loading"><span class="spinner"></span><span>Starting Tube Atlas...</span></div>
+  </main>
+</div>
+
+<noscript>
+  <div style="padding:24px">Tube Atlas needs JavaScript enabled to run its research tools.</div>
+</noscript>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>
