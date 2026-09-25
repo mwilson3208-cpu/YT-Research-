@@ -466,20 +466,20 @@ export const TOOLS = [
           statTile('Positive', `${data.sentiment.positivePercent}%`),
           statTile('Negative', `${data.sentiment.negativePercent}%`),
           statTile('Net sentiment', `${data.sentiment.netScore > 0 ? '+' : ''}${data.sentiment.netScore}`),
-          statTile('Questions asked', int(data.contentIdeas.questionCount), 'video ideas'),
+          statTile('Questions asked', int(data.contentIdeas.questionCount), `${data.contentIdeas.uniqueQuestions} distinct`),
           statTile('Direct requests', int(data.contentIdeas.requestCount), '"please make..."'),
           statTile('Total likes on comments', num(data.engagement.totalLikes)),
           statTile('Timestamp mentions', int(data.engagement.timestampMentions), 'retention signal'),
         ]),
-        panel('Content ideas hiding in the comments', 'Questions viewers asked, ranked by likes', rankedList(data.contentIdeas.questions.slice(0, 15), (comment) => [
+        panel('Content ideas hiding in the comments', 'Questions viewers asked, ranked by likes. Repeats are grouped, and a question asked more than once is the strongest signal here.', rankedList(data.contentIdeas.questions.slice(0, 15), (comment) => [
           el('div', { text: comment.text }),
-          el('div', { class: 'meta', text: `${comment.author} - ${int(comment.likes)} likes - ${date(comment.publishedAt)}` }),
+          el('div', { class: 'meta', text: `${int(comment.totalLikes)} likes${comment.occurrences > 1 ? ` - asked ${comment.occurrences} times` : ''} - ${comment.author}` }),
         ], 'No questions found in these comments.')),
       ];
       if (data.contentIdeas.requests.length) {
         nodes.push(panel('Direct requests', 'People telling you exactly what to make next', rankedList(data.contentIdeas.requests.slice(0, 12), (comment) => [
           el('div', { text: comment.text }),
-          el('div', { class: 'meta', text: `${comment.author} - ${int(comment.likes)} likes` }),
+          el('div', { class: 'meta', text: `${int(comment.totalLikes)} likes${comment.occurrences > 1 ? ` - asked ${comment.occurrences} times` : ''}` }),
         ])));
       }
       nodes.push(el('div', { class: 'two-col' }, [

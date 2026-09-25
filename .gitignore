@@ -4,3 +4,6 @@ node_modules/
 *.log
 .cache/
 coverage/
+.test-exports/
+exports/
+*.viewforge-backup

@@ -165,6 +165,21 @@ test('phrase extraction finds repeated pairs and skips stop words', () => {
 
 /* ---- Comments ---- */
 
+test('repeated questions are grouped and their likes combined', () => {
+  const result = analyzeComments([
+    { id: 1, author: 'a', text: 'What mic do you use?', likes: 10, replies: 0, publishedAt: '2026-01-01' },
+    { id: 2, author: 'b', text: 'What mic do you use??', likes: 25, replies: 0, publishedAt: '2026-01-02' },
+    { id: 3, author: 'c', text: 'what MIC do you use', likes: 5, replies: 0, publishedAt: '2026-01-03' },
+    { id: 4, author: 'd', text: 'How long does editing take?', likes: 8, replies: 0, publishedAt: '2026-01-04' },
+  ]);
+  assert.equal(result.contentIdeas.questionCount, 4, 'raw count keeps every instance');
+  assert.equal(result.contentIdeas.uniqueQuestions, 2, 'near-identical questions collapse into one');
+  const top = result.contentIdeas.questions[0];
+  assert.equal(top.occurrences, 3);
+  assert.equal(top.totalLikes, 40);
+  assert.equal(top.likes, 25, 'the best-liked wording represents the group');
+});
+
 test('sentiment reads positives, negatives and negation', () => {
   assert.equal(scoreSentiment('I love this, it is great').label, 'positive');
   assert.equal(scoreSentiment('This is awful and misleading').label, 'negative');

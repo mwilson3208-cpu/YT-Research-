@@ -22,6 +22,32 @@ const REQUEST_PATTERNS = [
   /\bpart\s?\d+\b/i,
 ];
 
+/**
+ * Collapse comments that ask the same thing.
+ *
+ * Several people asking one question is the strongest topic signal in a
+ * comment section, so repeats are counted rather than listed again: the
+ * best-liked wording represents the group and carries the combined likes.
+ */
+function groupRepeats(comments) {
+  const groups = new Map();
+  for (const comment of comments) {
+    const key = comment.text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, { ...comment, occurrences: 1, totalLikes: comment.likes });
+      continue;
+    }
+    existing.occurrences += 1;
+    existing.totalLikes += comment.likes;
+    // Keep the wording that resonated most.
+    if (comment.likes > existing.likes) {
+      Object.assign(existing, comment, { occurrences: existing.occurrences, totalLikes: existing.totalLikes });
+    }
+  }
+  return [...groups.values()].sort((a, b) => b.totalLikes - a.totalLikes || b.occurrences - a.occurrences);
+}
+
 export function scoreSentiment(text) {
   const words = String(text || '').toLowerCase().match(/[\p{L}']+/gu) || [];
   let score = 0;
@@ -68,8 +94,8 @@ export function analyzeComments(comments, { topKeywords = 25 } = {}) {
   for (const comment of enriched) counts[comment.sentiment] += 1;
 
   const phrases = extractPhrases(enriched.map((c) => c.text), { minCount: 2, maxTerms: topKeywords });
-  const questions = enriched.filter((c) => c.isQuestion).sort((a, b) => b.likes - a.likes);
-  const requests = enriched.filter((c) => c.isRequest).sort((a, b) => b.likes - a.likes);
+  const questions = groupRepeats(enriched.filter((c) => c.isQuestion));
+  const requests = groupRepeats(enriched.filter((c) => c.isRequest));
 
   return {
     analyzed: enriched.length,
@@ -89,8 +115,10 @@ export function analyzeComments(comments, { topKeywords = 25 } = {}) {
     contentIdeas: {
       questions: questions.slice(0, 20),
       requests: requests.slice(0, 20),
-      questionCount: questions.length,
-      requestCount: requests.length,
+      questionCount: enriched.filter((c) => c.isQuestion).length,
+      requestCount: enriched.filter((c) => c.isRequest).length,
+      uniqueQuestions: questions.length,
+      uniqueRequests: requests.length,
     },
     keywords: [...phrases.words, ...phrases.pairs].sort((a, b) => b.count - a.count).slice(0, topKeywords),
     topComments: [...enriched].sort((a, b) => b.likes - a.likes).slice(0, 15),

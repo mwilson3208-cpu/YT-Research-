@@ -11,7 +11,9 @@
     "build:web": "node scripts/build-web.mjs",
     "serve:web": "node scripts/serve-web.mjs",
     "build:single": "node scripts/build-single.mjs",
-    "build": "npm run build:web && npm run build:single"
+    "build": "npm run build:web && npm run build:single",
+    "setup:desktop": "node scripts/setup-desktop.mjs",
+    "mcp": "node mcp/server.js"
   },
   "engines": {
     "node": ">=20"

@@ -2,7 +2,7 @@
 
 **Before you produce your next voiceover, know exactly what wins.**
 
-Viewforge is a YouTube research console that reveals the top videos, channels, keywords and trends on the platform, so you create audio content people are already searching for. It runs in your browser or on your own machine, uses your own free YouTube API key, and sends nothing to anyone but Google.
+Viewforge is a YouTube research console that reveals the top videos, channels, keywords and trends on the platform, so you create audio content people are already searching for. It runs in your browser, on your own machine, or inside Claude Desktop. It uses your own free YouTube API key and sends nothing to anyone but Google.
 
 Built for creators running faceless channels: narration, documentary, sleep stories, explainers, podcast clips and Shorts.
 
@@ -42,9 +42,9 @@ Built for creators running faceless channels: narration, documentary, sleep stor
 
 ---
 
-## Run it in your browser
+## Four ways to run it
 
-Three ways, depending on how much setup you want. All three run the same app.
+Four ways, depending on how much setup you want. All four run the same research engine.
 
 ### 1. One file, no install
 
@@ -68,15 +68,60 @@ node server/index.js
 
 Then open **http://localhost:4173**. No `npm install` and no build step — the server uses only the Node standard library, and needs Node 20 or newer.
 
-This is the most capable version. Two tools work here that browsers will not allow from a hosted page:
+### 4. Let Claude Desktop run it for you
 
-| | Browser build | Node build |
-| --- | --- | --- |
-| 13 of the 15 tools | Yes | Yes |
-| Keyword Generator | Pattern bank | Live YouTube autocomplete |
-| Video to Text | Paste your own transcript | Fetches transcripts automatically |
+Viewforge installs as an MCP server, so you can ask Claude in plain language and it does the research. See [Use it inside Claude Desktop](#use-it-inside-claude-desktop) below.
+
+---
+
+The Node build and the Claude Desktop build are the most capable. Two tools work in both that browsers will not allow from a hosted page:
+
+| | Browser build | Node build | Claude Desktop |
+| --- | --- | --- | --- |
+| 13 of the 15 tools | Yes | Yes | Yes |
+| Keyword Generator | Pattern bank | Live autocomplete | Live autocomplete |
+| Video to Text | Paste your own transcript | Automatic | Automatic |
 
 Browsers block both endpoints for security reasons, which the app says on screen rather than failing quietly.
+
+---
+
+## Use it inside Claude Desktop
+
+Viewforge ships an MCP server, so Claude Desktop can run the research itself. You ask in plain language and Claude calls the tools, reads the results and reasons over them.
+
+> Use Viewforge to find outlier topics in sleep stories, then write me ten titles for the best one.
+
+### Setup
+
+```bash
+git clone https://github.com/mwilson3208-cpu/YT-Research-.git
+cd YT-Research-
+node scripts/setup-desktop.mjs --key YOUR_API_KEY
+```
+
+Then quit Claude Desktop completely and reopen it. Viewforge appears in the tools menu.
+
+The script finds your Claude Desktop config, backs it up, and adds a `viewforge` entry without touching any other MCP server you already run. Drop `--key` to start on sample data and add the key later.
+
+| Command | What it does |
+| --- | --- |
+| `node scripts/setup-desktop.mjs` | Install, or update an existing install |
+| `node scripts/setup-desktop.mjs --key AIza...` | Install and set your YouTube API key |
+| `node scripts/setup-desktop.mjs --print` | Print the JSON to paste in by hand, changing nothing |
+| `node scripts/setup-desktop.mjs --remove` | Remove Viewforge, leaving your other servers alone |
+
+### The 16 tools Claude gets
+
+`viewforge_keywords`, `viewforge_trends`, `viewforge_search_videos`, `viewforge_shorts`, `viewforge_outliers`, `viewforge_video`, `viewforge_channel`, `viewforge_compare_channels`, `viewforge_comments`, `viewforge_tags`, `viewforge_playlist`, `viewforge_transcript`, `viewforge_spin`, `viewforge_titles`, `viewforge_hashtags`, `viewforge_status`.
+
+Results come back as compact tables rather than raw data, so Claude can reason over them instead of drowning in 45 columns. When you want the full grid, ask for the CSV: any table tool takes `exportCsv` and writes all 45 columns to your Downloads folder, then tells Claude the path. Set `VIEWFORGE_EXPORT_DIR` in the config `env` block to send exports somewhere else.
+
+### Things worth knowing
+
+- **All 16 tools work here, including the two the browser build restricts.** The MCP server runs on your machine, so it reaches YouTube autocomplete and fetches real transcripts.
+- **Watch your quota.** Claude can fire several searches to answer one question, and each keyword search costs 100 of your 10,000 daily units. Ask `viewforge_status` at any time for the running total.
+- **If Viewforge does not appear**, check Claude Desktop's MCP log. The server writes a startup line there saying how many tools it loaded and whether it found your API key.
 
 ---
 
@@ -186,10 +231,15 @@ public/
   js/table.js       Sortable grid, column presets, CSV export
   js/util.js        Formatting and DOM helpers
   js/api.js         Fetch wrapper
+mcp/
+  server.js         MCP server for Claude Desktop (stdio JSON-RPC, no SDK)
+  tools.js          The 16 tools Claude sees
+  format.js         Markdown formatting for Claude
+  export.js         CSV export to disk
 web/                Static browser bundle (built - do not edit core/ by hand)
 dist/viewforge.html Whole app as one double-clickable file (built)
 scripts/            Build and preview scripts
-test/               89 tests, run with `npm test`
+test/               106 tests, run with `npm test`
 ```
 
 ---
@@ -197,10 +247,11 @@ test/               89 tests, run with `npm test`
 ## Development
 
 ```bash
-npm test            # 89 tests, no network required
+npm test            # 106 tests, no network required
 npm run dev         # Node server with --watch for auto-restart
 npm run build       # rebuild both browser bundles
 npm run serve:web   # preview the static bundle on :4174
+npm run mcp         # run the MCP server by hand (speaks JSON-RPC on stdin)
 ```
 
 The research engine is shared. `server/` holds plain ES modules with no Node
